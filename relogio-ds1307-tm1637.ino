@@ -7,7 +7,7 @@
 #define CLK 2
 #define DIO 3
 
-
+//Random comment
  
 //i2c ports in Arduino UNO 
 DS1307 rtc(A4, A5);
