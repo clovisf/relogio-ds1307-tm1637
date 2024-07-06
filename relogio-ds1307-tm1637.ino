@@ -12,36 +12,96 @@
 //i2c ports in Arduino UNO 
 DS1307 rtc(A4, A5);
 
-char horariocru;
-char* hora;
-char* minuto;
-int horaint;
-int minutoint;
-int horaminuto;
+
+char* hour;
+char* minute;
+int hourint;
+int minuteint;
+int hourminute;
+
+const uint8_t cletter[] = {
+	SEG_A | SEG_D | SEG_E | SEG_F            // C
+	};
 
 TM1637Display display(CLK, DIO);
+
+// Thermistor pin
+const int pinThermistor = A0;
+ 
+// thermistor parameters
+const double beta = 3950.0;
+const double r0 = 10000.0;
+const double t0 = 273.0 + 25.0;
+const double rx = r0 * exp(-beta/t0);
+ 
+// circuit parameters
+const double vcc = 4.92;
+const double R = 9810.0;
+ 
+// Number of samples
+const int nsamples = 5;
+
+int currenttime;
+int oldtime;
+int sweepcounter;
 
 void setup() {
   // put your setup code here, to run once:
   rtc.halt(false);
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  display.clear();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //horariocru= ;
-  hora = strtok(rtc.getTimeStr(), ":");
-  Serial.print("hora= ");
-  Serial.println(hora);
-  minuto= strtok(NULL, ":");
-  Serial.print("minuto= ");
-  Serial.println(minuto);
-  horaint= atoi(hora)*100;
-  minutoint= atoi(minuto);
-  horaminuto= horaint + minutoint;
-  display.setBrightness(0x0f);
-  display.clear();
-  display.showNumberDec(horaminuto, false);
+
+  currenttime= micros();
+  if(currenttime - oldtime < 100000){
+    oldtime= micros();
+
+    sweepcounter++;
+    if(sweepcounter <=50){
+      hour = strtok(rtc.getTimeStr(), ":");
+      //Serial.print("hour= ");
+      //Serial.println(hour);
+      minute= strtok(NULL, ":");
+      //Serial.print("minute= ");
+      //Serial.println(minute);
+      hourint= atoi(hour)*100; //to integer conversion
+      minuteint= atoi(minute);
+      hourminute= hourint + minuteint;
+      display.setBrightness(0x0f);
+      if(sweepcounter == 1){
+        display.clear();
+      }
+      display.showNumberDecEx(hourminute, 0x40, false);
+      // how to show the dots in the middle: https://forum.arduino.cc/t/how-to-show-the-two-dots-on-4-digit-7-segments-display/592130/2
+    }else if(sweepcounter > 49 && sweepcounter < 70){
+      // Read the sensor a couple of times
+      int sum = 0;
+      for (int i = 0; i < nsamples; i++) {
+        sum += analogRead(pinThermistor);
+      delay (5);
+    }
+ 
+      // Determina a resistência do termistor
+      double v = (vcc*sum)/(nsamples*1024.0);
+      double rt = (vcc*R)/v - R;
+ 
+      // Calcula a temperatura
+      double t = beta / log(rt/rx);
+      int tempcelsius= t-273.0;
+      if(sweepcounter == 51){
+        display.clear();
+      }
+      
+      display.showNumberDecEx(tempcelsius, 2, 1, false);
   
-  delay(1000);
+      //display.setSegments(cletter, 1, 3);
+    }else{
+      sweepcounter= 0;
+    }
+     
+  
+  }
+  
 }
