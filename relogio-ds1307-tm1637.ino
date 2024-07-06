@@ -41,8 +41,8 @@ const double R = 9810.0;
 // Number of samples
 const int nsamples = 5;
 
-int currenttime;
-int oldtime;
+long currenttime;
+long oldtime= 0;
 int sweepcounter;
 
 void setup() {
@@ -50,44 +50,63 @@ void setup() {
   rtc.halt(false);
   //Serial.begin(9600);
   display.clear();
+  Serial.begin(9600);
 }
 
 void loop() {
 
-hour = strtok(rtc.getTimeStr(), ":");
-//Serial.print("hour= ");
-//Serial.println(hour);
-minute= strtok(NULL, ":");
-//Serial.print("minute= ");
-//Serial.println(minute);
-hourint= atoi(hour)*100; //to integer conversion
-minuteint= atoi(minute);
-hourminute= hourint + minuteint;
-display.setBrightness(0x0f);
-if(sweepcounter == 1){
-  display.clear();
-}
-display.showNumberDecEx(hourminute, 0x40, false);
-// how to show the dots in the middle: https://forum.arduino.cc/t/how-to-show-the-two-dots-on-4-digit-7-segments-display/592130/2
-delay(2000);
-// Read the sensor a couple of times
-int sum = 0;
-for (int i = 0; i < nsamples; i++) {
-  sum += analogRead(pinThermistor);
-delay (5);
-}
+currenttime= micros();
+if(currenttime - oldtime >= 100000){
+  oldtime= micros();
+  sweepcounter++;
+  if(sweepcounter == 1){
+    hour = strtok(rtc.getTimeStr(), ":");
+    //Serial.print("hour= ");
+    //Serial.println(hour);
+    minute= strtok(NULL, ":");
+    //Serial.print("minute= ");
+    //Serial.println(minute);
+    hourint= atoi(hour)*100; //to integer conversion
+    minuteint= atoi(minute);
+    hourminute= hourint + minuteint;
+    display.setBrightness(0x0f);
+    if(sweepcounter == 1){
+      display.clear();
+    }
+    display.showNumberDecEx(hourminute, 0x40, false);
+    // how to show the dots in the middle: https://forum.arduino.cc/t/how-to-show-the-two-dots-on-4-digit-7-segments-display/592130/2
+    Serial.println("passou no 1");
+  }else if(sweepcounter == 50){
+    // Read the sensor a couple of times
+    int sum = 0;
+    for (int i = 0; i < nsamples; i++) {
+      sum += analogRead(pinThermistor);
+    delay (5);
+    }
 
-// Thermistor resistance
-double v = (vcc*sum)/(nsamples*1024.0);
-double rt = (vcc*R)/v - R;
+    // Thermistor resistance
+    double v = (vcc*sum)/(nsamples*1024.0);
+    double rt = (vcc*R)/v - R;
 
-// Temperature calculations (celsius)
-double t = beta / log(rt/rx);
-int tempcelsius= t-273.0;
+    // Temperature calculations (celsius)
+    double t = beta / log(rt/rx);
+    int tempcelsius= t-273.0;
 
-display.showNumberDecEx(tempcelsius, false, 1, 3);
-display.setSegments(cletter, 1, 3); //Letter 'C'
-delay(2000);    
+    display.showNumberDecEx(tempcelsius, false, 1, 3);
+    display.setSegments(cletter, 1, 3); //Letter 'C'
+    Serial.println("passou no 50");
+  }else if(sweepcounter == 70){
+    sweepcounter= 0;
+    Serial.println("passou no 70");
+  }else{
+
+  }
+  
+  
+  
+  
+  }
+    
 
   
      
