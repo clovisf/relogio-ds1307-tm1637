@@ -20,7 +20,7 @@ int minuteint;
 int hourminute;
 
 const uint8_t cletter[] = {
-	SEG_A | SEG_D | SEG_E | SEG_F            // C
+	SEG_A | SEG_D | SEG_E | SEG_F            //Letter 'C'
 	};
 
 TM1637Display display(CLK, DIO);
@@ -54,54 +54,43 @@ void setup() {
 
 void loop() {
 
-  currenttime= micros();
-  if(currenttime - oldtime < 100000){
-    oldtime= micros();
-
-    sweepcounter++;
-    if(sweepcounter <=50){
-      hour = strtok(rtc.getTimeStr(), ":");
-      //Serial.print("hour= ");
-      //Serial.println(hour);
-      minute= strtok(NULL, ":");
-      //Serial.print("minute= ");
-      //Serial.println(minute);
-      hourint= atoi(hour)*100; //to integer conversion
-      minuteint= atoi(minute);
-      hourminute= hourint + minuteint;
-      display.setBrightness(0x0f);
-      if(sweepcounter == 1){
-        display.clear();
-      }
-      display.showNumberDecEx(hourminute, 0x40, false);
-      // how to show the dots in the middle: https://forum.arduino.cc/t/how-to-show-the-two-dots-on-4-digit-7-segments-display/592130/2
-    }else if(sweepcounter > 49 && sweepcounter < 70){
-      // Read the sensor a couple of times
-      int sum = 0;
-      for (int i = 0; i < nsamples; i++) {
-        sum += analogRead(pinThermistor);
-      delay (5);
-    }
- 
-      // Determina a resistência do termistor
-      double v = (vcc*sum)/(nsamples*1024.0);
-      double rt = (vcc*R)/v - R;
- 
-      // Calcula a temperatura
-      double t = beta / log(rt/rx);
-      int tempcelsius= t-273.0;
-      if(sweepcounter == 51){
-        display.clear();
-      }
-      
-      display.showNumberDecEx(tempcelsius, 2, 1, false);
-  
-      //display.setSegments(cletter, 1, 3);
-    }else{
-      sweepcounter= 0;
-    }
-     
-  
-  }
-  
+hour = strtok(rtc.getTimeStr(), ":");
+//Serial.print("hour= ");
+//Serial.println(hour);
+minute= strtok(NULL, ":");
+//Serial.print("minute= ");
+//Serial.println(minute);
+hourint= atoi(hour)*100; //to integer conversion
+minuteint= atoi(minute);
+hourminute= hourint + minuteint;
+display.setBrightness(0x0f);
+if(sweepcounter == 1){
+  display.clear();
 }
+display.showNumberDecEx(hourminute, 0x40, false);
+// how to show the dots in the middle: https://forum.arduino.cc/t/how-to-show-the-two-dots-on-4-digit-7-segments-display/592130/2
+delay(2000);
+// Read the sensor a couple of times
+int sum = 0;
+for (int i = 0; i < nsamples; i++) {
+  sum += analogRead(pinThermistor);
+delay (5);
+}
+
+// Thermistor resistance
+double v = (vcc*sum)/(nsamples*1024.0);
+double rt = (vcc*R)/v - R;
+
+// Temperature calculations (celsius)
+double t = beta / log(rt/rx);
+int tempcelsius= t-273.0;
+
+display.showNumberDecEx(tempcelsius, false, 1, 3);
+display.setSegments(cletter, 1, 3); //Letter 'C'
+delay(2000);    
+
+  
+     
+}
+  
+
